@@ -37,6 +37,15 @@ def registerSonda():
               
               input("Sonda registrada com sucesso! (enter)")
 
+              sondaFile = "sonda_list.txt"
+              if os.path.exists(sondaFile):
+                     with open(sondaFile, 'a') as listFile:
+                            listFile.write(f'- {sondaName}\n')
+              else:
+                     with open(sondaFile, 'w') as listFile:
+                            listFile.write(f'{sondaName}\n')
+
+
 def registerData():
        local = input('Insira o local do registro:\n')
        local = ''.join(char if char not in invalidCharacters else '_' for char in local)

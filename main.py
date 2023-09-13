@@ -11,11 +11,12 @@ def menuOptions():
        options = input('-*-*-       Space Transmiter       -*-*-'+
                      '\n\n-Menu:'+
                      '\n    1 - Cadastrar Sonda e Gerar Par de Chaves.'+
-                     '\n    2 - Enviar Chave da Sonda.'+
-                     '\n    3 - Coletar dados da sonda.'+
-                     '\n    4 - Gerar Assinatura dos dados Coletados.'+
-                     '\n    5 - Enviar para a Terra os dados.'
-                     '\n    6 - Sair.\n')
+                     '\n    2 - Ver lista de sondas cadastradas.'
+                     '\n    3 - Enviar Chave da Sonda.'+
+                     '\n    4 - Coletar dados da sonda.'+
+                     '\n    5 - Gerar Assinatura dos dados Coletados.'+
+                     '\n    6 - Enviar para a Terra os dados.'
+                     '\n    7 - Sair.\n')
        menu()
 def menu():
        global runnig
@@ -30,22 +31,40 @@ def menu():
 
        elif options == '2':
               cls()
+              print('Menu:\n    2 - Ver lista de sondas cadastradas.')
+              sondaFile = 'sonda_list.txt'
+              sondaList = []
+
+              if os.path.exists(sondaFile):
+                     with open(sondaFile, 'r') as sondaFile:
+                            sondaList = sondaFile.read().splitlines()
+                            for index, sonda in enumerate(sondaList, start=1):
+                                   input(f'\n{index} - {sonda}.\n(enter)')
+                                   
+                     
+              elif sondaList == [] or not os.path.exists(sondaFile) :
+                     input('\nAinda não existem sondas cadastradas. (enter)')
+              
+              
+              
+       elif options == '3':
+              cls()
               print('Menu:\n    2 - Enviar Chave da Sonda.')
 
-       elif options == '3':
+       elif options == '4':
               cls()
               print('Menu:\n    3 - Coletar dados da sonda.\n')
               registerData()
 
-       elif options == '4':
+       elif options == '5':
               cls()
               print('Menu:\n    4 - Gerar Assinatura dos dados Coletados.')
 
-       elif options == '5':
+       elif options == '6':
               cls()
               print('Menu:\n    5 - Enviar para a Terra os dados.' )
        
-       elif options == '6':
+       elif options == '7':
               cls()
               runnig = False
        else:
