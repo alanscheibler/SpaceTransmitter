@@ -1,5 +1,5 @@
 import os
-from functions import cls, registerSonda, registerData, sendKey, clientSocket
+from functions import cls, registerSonda, registerData, sendKey, clientSocket, generateSignature
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES
 from Crypto.Cipher import PKCS1_OAEP
@@ -85,6 +85,7 @@ def menu():
        elif options == '5':
               cls()
               print('Menu:\n    5 - Gerar Assinatura dos dados Coletados.')
+              generateSignature()
 
        elif options == '6':
               cls()

@@ -1,7 +1,9 @@
 import os
 from Crypto.PublicKey import RSA
+import rsa
 from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import PBKDF2
+from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Random import get_random_bytes
 import socket
 
@@ -25,20 +27,13 @@ def registerSonda():
               input(f'A sonda {sondaName} já foi registrada, registre sua sonda com um novo nome. (enter)')
        else:
               os.mkdir(folderPath)
-              key = RSA.generate(1024)
-              privateGen = key.export_key()
-              publicGen = key.publickey().export_key()
-              
+              (pubKey, privKey) = rsa.newkeys(2048)
               with open(sondaPrivate, 'wb') as privateFile:
-                     privateFile.write(privateGen)
-                     privateKeyPem = open(sondaPrivate, 'rb').read()
-                     privateKeyPem = b'\n'.join([privateKeyPem[i:i+64] for i in range (0, len(privateKeyPem),64)])
+                     privateFile.write(privKey.save_pkcs1('PEM'))
 
               with open(sondaPublic, 'wb') as publicFile:
-                     publicFile.write(publicGen)
-                     publicKeyPem = open(sondaPublic,'rb').read()
-                     publicKeyPem = b'\n'.join([publicKeyPem[i:i+64] for i in range(0, len(publicKeyPem), 64)])
-              
+                     publicFile.write(pubKey.save_pkcs1('PEM'))
+
               input("Sonda registrada com sucesso! (enter)")
 
               sondaFile = "sonda_list.txt"
@@ -124,3 +119,25 @@ def clientSocket(HOST, PORT):
               sendKey(clientSocket, sondaName)
               
        clientSocket.close()
+
+def generateSignature():
+       sonda = input('Digite o nome da sonda a qual deseja criar a assinatura dos dados:\n')
+       register = input('Digite o nome do registro que deseja gerar a assinatura:\n')
+       registerFile = os.path.join(os.getcwd(), sonda, f'{register}.txt')
+       keyFile = os.path.join(os.getcwd(), sonda, f'{sonda}.private.pem')
+       signaturePath = os.path.join(os.getcwd(), sonda, f'{register}.signature.txt')
+       with open(keyFile, 'rb') as keyFile:
+              privateKeyData = keyFile.read()
+              privateKey = rsa.PrivateKey.load_pkcs1(privateKeyData)
+
+       try:
+              with open(registerFile, 'rb') as sign:
+                     fileSing = sign.read()
+              signature = rsa.sign(fileSing, privateKey, 'SHA-256')
+
+              with open(signaturePath, 'wb') as signatureFile:
+                     signatureFile.write(signature)
+              input('Assinatura gerada com sucesso.(enter)')
+       
+       except FileNotFoundError:
+               input(f'O arquive {register} não foi encontrado')
