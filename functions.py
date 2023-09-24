@@ -3,6 +3,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Random import get_random_bytes
+import socket
 
 invalidCharacters = ("/",":","*","?","<",">","|","\ "," ")
 
@@ -68,10 +69,19 @@ def registerData():
               registerSonda()
 
        registerPath = os.path.join(os.getcwd(), sonda)
-       register = os.path.join(registerPath, f'{local}_{data}.txt')
+       registerName = f'{local}_{data}.txt'
+       register = os.path.join(registerPath, registerName)
        with open(register, 'w') as registerFile:
                             registerFile.write(f'Sonda: {sonda}\n\nLocal: {local}\n\nData :{data}\n\nTemperatura: {temperatura}\n\nRadiação Alfa: {radiacaoAlfa}\n\nRadiação Beta: {radiacaoBeta}\n\nRadiação Gama: {radiacaoGama}')
-                            
+
+       registerList = os.path.join(registerPath,"register_list.txt")
+       if os.path.exists(registerList):
+              with open(registerList, 'a') as listFile:
+                     listFile.write(f'{registerName}\n')
+       else:
+              with open(registerList, 'w') as listFile:
+                     listFile.write(f'{registerName}\n')
+
        key = input('Insira a chave para criptografia do arquivo:\n')
        key_aes = PBKDF2(key.encode(), salt=os.urandom(8), dkLen=32, count=1000000)
 
@@ -85,5 +95,32 @@ def registerData():
        
        input(f'Dados coletados e criptografados com sucesso! (enter)\n')
 
+       
        #decipher = AES.new(key, AES.MODE_EAX, nonce=cipher.nonce)
        #decryptedData = decipher.decrypy_and_verify(cipherRegister, tag)
+
+def sendKey(clientSocket, sondaName):
+                            publicKeyFile = os.path.join(os.getcwd(), sondaName, f'{sondaName}.public.pem')
+
+                            if os.path.exists(publicKeyFile):
+                                   
+                                   message = f'Enviar chave pública da sonda {sondaName}'
+                                   clientSocket.sendall(message.encode())
+
+                                   with open(publicKeyFile,'rb') as file:
+                                          fileData = file.read()
+                                          clientSocket.sendall(fileData)
+                                          print(f'Chave pública da sonda {sondaName} enviada com sucesso.')
+                            else:
+                                   print(f'Chave pública da sonda {sondaName} não encontrada')
+def clientSocket(HOST, PORT):
+       clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+       clientSocket.connect((HOST, PORT)) 
+       while True:
+              sondaName = input('Digite o nome da sonda da qual deseja compartilhar a chave pública (ou "exit" para sair:)')
+
+              if sondaName.lower() == 'exit':
+                     break
+              sendKey(clientSocket, sondaName)
+              
+       clientSocket.close()
