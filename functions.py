@@ -1,11 +1,9 @@
 import os
-from Crypto.PublicKey import RSA
 import rsa
 from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import PBKDF2
-from Crypto.Cipher import PKCS1_OAEP
-from Crypto.Random import get_random_bytes
-import socket
+import subprocess
+import time
 
 invalidCharacters = ("/",":","*","?","<",">","|","\ "," ")
 
@@ -95,30 +93,43 @@ def registerData():
        #decryptedData = decipher.decrypy_and_verify(cipherRegister, tag)
 
 def sendKey(clientSocket, sondaName):
-                            publicKeyFile = os.path.join(os.getcwd(), sondaName, f'{sondaName}.public.pem')
+       publicKeyFile = os.path.join(os.getcwd(), sondaName, f'{sondaName}.public.pem')
 
-                            if os.path.exists(publicKeyFile):
-                                   
-                                   message = f'Enviar chave pública da sonda {sondaName}'
-                                   clientSocket.sendall(message.encode())
-
-                                   with open(publicKeyFile,'rb') as file:
-                                          fileData = file.read()
-                                          clientSocket.sendall(fileData)
-                                          print(f'Chave pública da sonda {sondaName} enviada com sucesso.')
-                            else:
-                                   print(f'Chave pública da sonda {sondaName} não encontrada')
-def clientSocket(HOST, PORT):
-       clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-       clientSocket.connect((HOST, PORT)) 
-       while True:
-              sondaName = input('Digite o nome da sonda da qual deseja compartilhar a chave pública (ou "exit" para sair:)')
-
-              if sondaName.lower() == 'exit':
-                     break
-              sendKey(clientSocket, sondaName)
+       if os.path.exists(publicKeyFile):
               
-       clientSocket.close()
+              message = f'{sondaName}##KEY'
+              clientSocket.sendall(message.encode())
+
+              with open(publicKeyFile,'rb') as file:
+                     fileData = file.read()
+                     clientSocket.sendall(fileData)
+                     print(f'Chave pública da sonda {sondaName} enviada com sucesso.')
+       else:
+              print(f'Chave pública da sonda {sondaName} não encontrada')
+
+def sendRegister(clientSocket, sondaName, registerName):
+       registerFile = os.path.join(os.getcwd(), sondaName, f'{registerName}.txt')
+       if os.path.exists(registerFile):
+              
+              registerM = f'{sondaName}#{registerName}#REGISTER'
+              clientSocket.sendall(registerM.encode())
+              with open(registerFile,'rb') as file:
+                     fileData = file.read()
+                     clientSocket.sendall(fileData)
+                     print(f'Registro "{registerName}" enviado com sucesso.')
+       else:
+              print(f'{registerName} não encontrado')
+
+       time.sleep(1)
+
+       registerSignature = os.path.join(os.getcwd(), sondaName, f'{registerName}.signature.txt')
+       if os.path.exists(registerSignature):
+              signatureM = f'{sondaName}#{registerName}#SIGNATURE'
+              clientSocket.sendall(signatureM.encode())
+              with open(registerSignature,'rb') as file:
+                     registerSignatureData = file.read()
+                     clientSocket.sendall(registerSignatureData)
+
 
 def generateSignature():
        sonda = input('Digite o nome da sonda a qual deseja criar a assinatura dos dados:\n')
@@ -141,3 +152,12 @@ def generateSignature():
        
        except FileNotFoundError:
                input(f'O arquive {register} não foi encontrado')
+
+def serverSocket():
+       mainPath = os.getcwd()
+       serverPath = os.path.join(mainPath,'server')
+       server = "server.py"
+       cmd = f'start cmd.exe /K "cd /D {serverPath} && python {server}"'
+       subprocess.Popen(cmd, shell=True)
+
+       input('Apente enter para continuar após uma janela do cmd se abra:')
