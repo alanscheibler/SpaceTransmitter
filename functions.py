@@ -4,6 +4,7 @@ from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import PBKDF2
 import subprocess
 import time
+import datetime
 
 invalidCharacters = ("/",":","*","?","<",">","|","\ "," ")
 
@@ -37,35 +38,47 @@ def registerSonda():
               sondaFile = "sonda_list.txt"
               if os.path.exists(sondaFile):
                      with open(sondaFile, 'a') as listFile:
-                            listFile.write(f'- {sondaName}\n')
+                            listFile.write(f' {sondaName}\n')
               else:
                      with open(sondaFile, 'w') as listFile:
                             listFile.write(f'{sondaName}\n')
 
 
 def registerData():
-       local = input('Insira o local do registro:\n')
-       local = ''.join(char if char not in invalidCharacters else '_' for char in local)
-       data = input('Insira a data do registro:\n')
-       data = ''.join(char if char not in invalidCharacters else '_' for char in data)
+       while True:
+              local = input('Insira o local do registro:\n')
+              local = ''.join(char if char not in invalidCharacters else '.' for char in local)
+              if local.strip():
+                     break
+              else:
+                     print('O local não pode estar vazio. Por favor, insira um valor válido.')
+
+       now = datetime.datetime.now()
+       data = now.strftime("%d.%m") 
        temperatura = input('Insira a Temperatura:\n')
-       radiacaoAlfa = input('Insira a Radiacao Alfa:\n')
-       radiacaoBeta = input('Insira a Radiacao Beta:\n')
-       radiacaoGama = input('Insira a Radiacao Gama:\n')
-       sonda = input('Insira o nome da sonda onde os dados serão registrados:\n')
+       radiacaoAlfa = input('Insira a Radiação Alfa:\n')
+       radiacaoBeta = input('Insira a Radiação Beta:\n')
+       radiacaoGama = input('Insira a Radiação Gama:\n')
+       while True:
+              sonda = input('Insira o nome da sonda onde os dados serão registrados:\n')
+              sonda = ''.join(char if char not in invalidCharacters else '.' for char in sonda)
+              if sonda.strip():
+                     break
+              else:
+                     print('O nome da sonda não pode estar vazio, insira um nome válido.')
+
        registerPath = os.path.join(os.getcwd(), sonda)
 
        if not os.path.exists(registerPath):
-              cls()
               print('Menu:\n    3 - Coletar dados da sonda.\n')
               input(f'A sonda {sonda} ainda não foi registrada, realize o registro dela para prosseguir. (enter)')
-              registerSonda()
+              return
 
        registerPath = os.path.join(os.getcwd(), sonda)
-       registerName = f'{local}_{data}.txt'
+       registerName = f'{local}.{data}.txt'
        register = os.path.join(registerPath, registerName)
        with open(register, 'w') as registerFile:
-                            registerFile.write(f'Sonda: {sonda}\n\nLocal: {local}\n\nData :{data}\n\nTemperatura: {temperatura}\n\nRadiação Alfa: {radiacaoAlfa}\n\nRadiação Beta: {radiacaoBeta}\n\nRadiação Gama: {radiacaoGama}')
+              registerFile.write(f'Sonda: {sonda}\n\nLocal: {local}\n\nData :{data}\n\nTemperatura: {temperatura}\n\nRadiacao Alfa: {radiacaoAlfa}\n\nRadiacao Beta: {radiacaoBeta}\n\nRadiacao Gama: {radiacaoGama}')
 
        registerList = os.path.join(registerPath,"register_list.txt")
        if os.path.exists(registerList):
@@ -75,22 +88,38 @@ def registerData():
               with open(registerList, 'w') as listFile:
                      listFile.write(f'{registerName}\n')
 
-       key = input('Insira a chave para criptografia do arquivo:\n')
-       key_aes = PBKDF2(key.encode(), salt=os.urandom(8), dkLen=32, count=1000000)
+       key = input('Insira a chave de criptografia do arquivo:\n')
+       if len(key) < 16:
+              key = key.ljust(16)
+       elif len(key) > 16:
+              key = key[:16]
 
-       cipher = AES.new(key_aes, AES.MODE_EAX)
-       plainRegister = open(register, 'rb').read()
-       cipherRegister, tag = cipher.encrypt_and_digest(plainRegister)
+       keyAES = key.encode('utf-8')
+       cipher = AES.new(keyAES, AES.MODE_EAX)
 
-       with open(register,'wb') as registerFile:
-               registerFile.write(cipher.nonce)
-               registerFile.write(cipherRegister)
+       with open(register, 'rb') as file:
+              plaintext = file.read()  
+       cipherText, tag = cipher.encrypt_and_digest(plaintext)
+
+       with open(register, 'wb') as encryptedFile:
+              encryptedFile.write(cipherText)
+
+       #Decifra o texto
+       #     key = input('Insira a chave de criptografia do arquivo:\n')
+       #     if len(key) < 16:
+       #        key = key.ljust(16)
+       #     elif len(key) > 16:
+       #         key = key[:16]
+       #     keyAES = key.encode('utf-8')
+       #cipher = AES.new(keyAES, AES.MODE_EAX)
+       #cipherText, tag = cipher.encrypt_and_digest(plaintext)    
+       #decipher = AES.new(keyAES, AES.MODE_EAX, nonce=cipher.nonce)
+       #decryptedData = decipher.decrypt_and_verify(cipherText, tag)
        
        input(f'Dados coletados e criptografados com sucesso! (enter)\n')
 
        
-       #decipher = AES.new(key, AES.MODE_EAX, nonce=cipher.nonce)
-       #decryptedData = decipher.decrypy_and_verify(cipherRegister, tag)
+       
 
 def sendKey(clientSocket, sondaName):
        publicKeyFile = os.path.join(os.getcwd(), sondaName, f'{sondaName}.public.pem')
@@ -103,12 +132,16 @@ def sendKey(clientSocket, sondaName):
               with open(publicKeyFile,'rb') as file:
                      fileData = file.read()
                      clientSocket.sendall(fileData)
-                     print(f'Chave pública da sonda {sondaName} enviada com sucesso.')
+                     input(f'Chave pública da sonda {sondaName} enviada com sucesso.(enter)')
        else:
-              print(f'Chave pública da sonda {sondaName} não encontrada')
+              input(f'Chave pública da sonda {sondaName} não encontrada.(enter)')
 
 def sendRegister(clientSocket, sondaName, registerName):
        registerFile = os.path.join(os.getcwd(), sondaName, f'{registerName}.txt')
+       registerSignature = os.path.join(os.getcwd(), sondaName, f'{registerName}.signature.txt')
+       if not os.path.exists(registerSignature):
+              input('Assinatura não encontrada.(enter)')
+              generateSignature()
        if os.path.exists(registerFile):
               
               registerM = f'{sondaName}#{registerName}#REGISTER'
@@ -116,19 +149,21 @@ def sendRegister(clientSocket, sondaName, registerName):
               with open(registerFile,'rb') as file:
                      fileData = file.read()
                      clientSocket.sendall(fileData)
-                     print(f'Registro "{registerName}" enviado com sucesso.')
+                     input(f'Registro "{registerName}" enviado com sucesso.(enter)')
        else:
-              print(f'{registerName} não encontrado')
+              input(f'{registerName} não encontrado.(enter)')
 
        time.sleep(1)
 
-       registerSignature = os.path.join(os.getcwd(), sondaName, f'{registerName}.signature.txt')
        if os.path.exists(registerSignature):
               signatureM = f'{sondaName}#{registerName}#SIGNATURE'
               clientSocket.sendall(signatureM.encode())
               with open(registerSignature,'rb') as file:
                      registerSignatureData = file.read()
                      clientSocket.sendall(registerSignatureData)
+
+       verifyM = clientSocket.recv(1024).decode()
+       input(f'{verifyM}(enter)') 
 
 
 def generateSignature():

@@ -2,17 +2,13 @@ import socket
 import threading
 import os
 import rsa
-import sys
+from Crypto.Cipher import AES
+from Crypto.Protocol.KDF import PBKDF2
 
-HOST = '127.0.0.1'
-PORT = 443
+def cls():
+       os.system("cls")
 
-serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-serverSocket.bind((HOST, PORT))
-serverSocket.listen()
-serverSocket.settimeout(30)
 
-print('Aguardando conexões...')
 
 def verifySignature(sondaName, registerName):
     signaturePath = os.path.join(sondaName, f'{registerName}.signature.txt')
@@ -29,8 +25,8 @@ def verifySignature(sondaName, registerName):
 
     try:
         rsa.verify(registerData, signatureData, publicKey)
-        print('Assinatura verificada com sucesso!')
-        verifyM = ('Assinatura verificada com sucesso pelo servidor!')
+        print('Assinatura verificada com sucesso pelo servidor!')
+        verifyM = ('Assinatura verificada com sucesso!')
         clientSocket.sendall(verifyM.encode())
         return True
     except Exception as e:
@@ -40,13 +36,12 @@ def verifySignature(sondaName, registerName):
         return False
     
 verify = 0
-def handleClient(clientSocket):
+def receiveFile(clientSocket):
     global verify
-
     while True:
         try:       
+            clientSocket.settimeout(60)
             message = clientSocket.recv(1024).decode()
-            print(verify)
 
             data = message.split('#')
             sondaName = data[0]
@@ -78,16 +73,22 @@ def handleClient(clientSocket):
             
             elif fileType == 'REGISTER':
                 verify = verify + 1
-                print(verify)
                 registerData = clientSocket.recv(4096)
                 if registerData:
                     with open(os.path.join(sondaFolder,f'{registerName}.txt'), 'wb') as regFile: 
                         regFile.write(registerData)
+
+                registerList = os.path.join(sondaFolder,"register_list.txt")
+                if os.path.exists(registerList):
+                        with open(registerList, 'a') as listFile:
+                                listFile.write(f'{registerName}\n')
+                else:
+                        with open(registerList, 'w') as listFile:
+                                listFile.write(f'{registerName}\n')
                     
                 
             elif fileType == 'SIGNATURE':
                 verify = verify + 1
-                print(verify)
                 signatureData = clientSocket.recv(4096)
                 if signatureData:
                     with open(os.path.join(sondaFolder,f'{registerName}.signature.txt'), 'wb') as sigFile: 
@@ -96,19 +97,66 @@ def handleClient(clientSocket):
             if verify == 2:
                 verify == 0       
                 verifySignature(sondaName, registerName)
+                 
         except socket.timeout:
             print('Tempo limite atingido. Fechando conexão')
             break
+running = True
+while running == True:
+    cls()
+    options = input('-*-*-       Space Transmiter       -*-*-'+
+                    '\n-*-*-    server socket    -*-*-'
+                     '\n\nMenu:'+
+                     '\n    1 - Executar server.'+
+                     '\n    2 - Ver lista de sondas cadastradas.'+
+                     '\n    3 - Sair.\n')
+    
+    if options == '1':
+        cls()
+        print('Menu:\n    1 - Executar server.')
+        choseServer = input('Deseja rodar o server para local host(1) ou deseja conectar-se com uma maquina externa(2)?')
+        if choseServer == '1':
+            HOST = '127.0.0.1'
+            PORT = 443
 
+        elif choseServer == '2':
+            HOST = input('Insira o ip da sua maquina:\n')
 
-try:
-    while True:
+            PORT = int(input('Insira a porta que desjea realizar a conexão:\n'))
+        serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        serverSocket.bind((HOST, PORT))
+        serverSocket.listen()
+
+        print('Aguardando conexões...')     
         clientSocket, clientAddress = serverSocket.accept()
         print('Conexão estabelecida com: ', clientAddress)
-        clientHandler = threading.Thread(target=handleClient, args=(clientSocket,))
+        clientHandler = threading.Thread(target=receiveFile, args=(clientSocket,))
         clientHandler.start()
-except socket.timeout:
-        sys.exit()
-        print('Tempo limite atingido. Fechando conexão')
 
+    elif options == '2':
+        cls()
+        print('Menu:\n    2 - Ver lista de sondas cadastradas.')
+        sondaFile = 'sonda_list.txt'
+        sondaList = []
+
+        if os.path.exists(sondaFile):
+                with open(sondaFile, 'r') as sondaFile:
+                    sondaList = sondaFile.read().splitlines()
+                    for index, sonda in enumerate(sondaList, start=1):
+                            input(f'\n{index} - {sonda}.\n(enter)')
+                            
+                
+        elif sondaList == [] or not os.path.exists(sondaFile) :
+                input('\nAinda não existem sondas cadastradas. (enter)')
+
+    
+    elif options == '3':
+        cls()
+        running = False
         
+    else:
+        input('Insira uma opção valida!\nPressione enter para continuar.')
+            
+        
+
+    
