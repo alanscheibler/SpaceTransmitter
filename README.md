@@ -11,8 +11,8 @@ O projeto foi desenvolvido para o processo avaliativo da diciplina de CyberSecur
 - Ver lista de registros da sonda (mostra todos os arquivos de registro cadastrados em uma sonda específica);
 - Enviar os arquivos para a Terra (envia o arquivo de registro juntamente da assinatura e realiza a verificação por parte do server para confirmar que os arquivos não foram interceptados e alterados);
   
-## Como executar
-Como o projeto é executado via promp de comando é preciso ter a linguagem de programação python 3.
+## Requisitos
+Como o projeto é executado via promp de comando é preciso ter a linguagem de programação python 3 instalada em sua maquina.
 Antes de executar o arquivo você deve instalar as seguintes dependencias: rsa e pycryptodome.
 ```
 pip install rsa
@@ -20,6 +20,8 @@ pip install rsa
 ```
 pip install pycryptodome
 ```
+
+## Como executar
 Para executar você deve navegar através do prompt de comando até a pasta do projeto e executar o arquivo "main.py".
 
 - Para executar, navegue até a pasta do projeto pelo prompt de comando e digite:
@@ -27,7 +29,7 @@ Para executar você deve navegar através do prompt de comando até a pasta do p
 ```
 py main.py
 ```
-- Quando tentar realizar o envio dos arquivos para outra maquina, o outro usuário que rodará o server socket deve navegar até a pasta "server", localizada dentro da pasta do projeto e executar o arquivo "Server Socket.py" e certificar-se de inserir corretamente o ip da maquina assim como a porta e informar os dados para o momento do envio.
+- Quando tentar realizar o envio dos arquivos para outra maquina, o outro usuário que rodará o server socket deve navegar até a pasta "server", localizada dentro da pasta do projeto e executar o arquivo "Server Socket.py" e certificar-se de inserir corretamente o ip da maquina assim como a porta e informar esses dados dados para o momento do envio.
 ```
 py ServerSocket.py
 ```
