@@ -12,6 +12,7 @@ O projeto foi desenvolvido para o processo avaliativo da diciplina de CyberSecur
 - Enviar os arquivos para a Terra (envia o arquivo de registro juntamente da assinatura e realiza a verificação por parte do server para confirmar que os arquivos não foram interceptados e alterados);
 -   
 ## Como executar
+Como o projeto é executado via promp de comando é preciso ter a linguagem de programação python 3.
 Antes de executar o arquivo você deve instalar as seguintes dependencias: rsa e pycryptodome.
 ```
 pip install rsa
