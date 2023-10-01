@@ -15,10 +15,12 @@ O projeto foi desenvolvido para o processo avaliativo da diciplina de CyberSecur
   
 ## Requisitos
 Como o projeto é executado via promp de comando é preciso ter a linguagem de programação python 3 instalada em sua maquina.
-Antes de executar o arquivo você deve instalar as seguintes dependencias: rsa e pycryptodome.
+Antes de executar o arquivo você deve instalar as seguintes dependencias:
+- rsa
 ```
 pip install rsa
 ```
+- pycryptodome
 ```
 pip install pycryptodome
 ```
